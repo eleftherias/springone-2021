@@ -1,6 +1,7 @@
 package com.example.springone2021;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -15,7 +16,8 @@ public class SecurityConfig {
         http
                 .httpBasic(withDefaults())
                 .authorizeRequests(authz -> authz
-                    .antMatchers("/about").permitAll()
+                    .antMatchers(HttpMethod.GET, "/about").permitAll()
+                    .antMatchers(HttpMethod.POST, "/about").hasRole("ADMIN")
                     .antMatchers("/submissions").hasRole("SPEAKER")
                     .anyRequest().authenticated()
                 );

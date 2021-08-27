@@ -15,6 +15,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -82,4 +83,44 @@ class ConferenceControllerTests {
         this.mockMvc.perform(get("/submissions"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    public void postAboutWhenUserIsAdminThenUpdatesConferenceInfo() throws Exception {
+        this.mockMvc.perform(post("/about")
+                        .content("Join us online September 11-12!")
+                        .with(csrf())
+                        .with(user("admin").roles("ADMIN"))
+                )
+                .andExpect(status().isOk());
+
+        this.mockMvc.perform(get("/about"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Join us online September 11-12!"));
+    }
+
+    @Test
+    public void postAboutWhenUserIsNotAdminThenReturns403() throws Exception {
+        this.mockMvc.perform(post("/about")
+                        .content("Join us online September 11-12!")
+                        .with(csrf())
+                        .with(user("speaker").roles("SPEAKER"))
+                )
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void postAboutWhenUnauthenticatedUserReturns401() throws Exception {
+        this.mockMvc.perform(post("/about")
+                        .content("Join us online September 11-12!")
+                        .with(csrf())
+                )
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void postAboutWithoutCsrfThenReturns403() throws Exception {
+        this.mockMvc.perform(post("/about"))
+                .andExpect(status().isForbidden());
+    }
+
 }
