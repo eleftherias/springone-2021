@@ -16,6 +16,7 @@ public class SecurityConfig {
                 .httpBasic(withDefaults())
                 .authorizeRequests(authz -> authz
                     .antMatchers("/about").permitAll()
+                    .antMatchers("/submissions").hasRole("SPEAKER")
                     .anyRequest().authenticated()
                 );
         return http.build();

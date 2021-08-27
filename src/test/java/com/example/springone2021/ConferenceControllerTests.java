@@ -3,13 +3,18 @@ package com.example.springone2021;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -51,6 +56,30 @@ class ConferenceControllerTests {
     @Test
     public void greetingWhenUnauthenticatedUserReturns401() throws Exception {
         this.mockMvc.perform(get("/greeting"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void submissionsWhenUserIsSpeakerReturnsListOfSubmissions() throws Exception {
+        ConferenceUser joe = new ConferenceUser();
+        joe.setUsername("Joe");
+        joe.setSubmissions(List.of("Getting Started with Spring Authorization Server"));
+        joe.setSpeaker(true);
+        this.mockMvc.perform(get("/submissions").with(user(new ConferenceUserService.ConferenceUserDetails(joe))))
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$", hasSize(1)))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0]", is("Getting Started with Spring Authorization Server")));
+    }
+
+    @Test
+    public void submissionsWhenUserIsNotSpeakerReturns403() throws Exception {
+        this.mockMvc.perform(get("/submissions").with(user("user").roles("ATTENDEE")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void submissionsWhenUnauthenticatedUserReturn401() throws Exception {
+        this.mockMvc.perform(get("/submissions"))
                 .andExpect(status().isUnauthorized());
     }
 }
